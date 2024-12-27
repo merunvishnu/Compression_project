@@ -20,10 +20,7 @@ class HuffmanCoding:
     def calculate_frequencies(self, data):
         frequency = {}
         for byte in data:
-            if byte in frequency:
-                frequency[byte] += 1
-            else:
-                frequency[byte] = 1
+            frequency[byte] = frequency.get(byte, 0) + 1
         return frequency
 
     def build_heap(self, frequency):
@@ -81,11 +78,11 @@ class HuffmanCoding:
 
     def compress_text(self, text):
         # Compresses text directly (for .docx and .pdf text)
-        frequency = self.calculate_frequencies(text.encode())  # Convert text to bytes
+        frequency = self.calculate_frequencies(text.encode('utf-8'))  # Use UTF-8 for better encoding support
         self.build_heap(frequency)
         self.make_codes()
 
-        compressed_data = ''.join([self.codes[byte] for byte in text.encode()])
+        compressed_data = ''.join([self.codes[byte] for byte in text.encode('utf-8')])
         extra_padding = 8 - len(compressed_data) % 8
         compressed_data += '0' * extra_padding
         padded_info = "{0:08b}".format(extra_padding)
