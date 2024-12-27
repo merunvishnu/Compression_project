@@ -1,76 +1,47 @@
-from flask import Flask, render_template, request, send_file
-from PIL import Image
 import os
+from flask import Flask, render_template, request, redirect, url_for
+import time
 from huffman import HuffmanCoding
-from docx import Document
-import PyPDF2
 
 app = Flask(__name__)
 
-# Create directories if they don't exist
-UPLOAD_FOLDER = "uploads"
-COMPRESSED_FOLDER = "compressed"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(COMPRESSED_FOLDER, exist_ok=True)
-
-# Set max upload size to 50MB
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
-
-@app.route('/')
+@app.route("/", methods=["GET"])
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["POST"])
 def upload_file():
-    if 'file' not in request.files:
-        return 'No file part!'
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file!'
+    if request.method == "POST":
+        # Check if the file part is present in the request
+        file = request.files.get("file")
+        
+        if not file:
+            return redirect(url_for('index'))  # Redirect to the main page if no file is uploaded
 
-    filename = file.filename
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(file_path)
+        filename = file.filename
+        if filename.endswith(('.jpg', '.jpeg', '.png', '.txt', '.docx', '.pdf')):
+            file_path = os.path.join("uploads", filename)
+            file.save(file_path)
 
-    try:
-        # Process image files
-        if filename.lower().endswith(('jpg', 'jpeg', 'png')):
-            compressed_image_path = os.path.join(COMPRESSED_FOLDER, "compressed_" + filename)
-            image = Image.open(file_path)
-            image.save(compressed_image_path, quality=85, optimize=True)
-            return send_file(compressed_image_path, as_attachment=True)
-
-        # Process text files using Huffman Coding
-        elif filename.lower().endswith('.txt'):
+            # Start compression process
+            status = "Processing"
+            # Use HuffmanCoding to compress the file
             huffman = HuffmanCoding()
-            compressed_file = huffman.compress(file_path)
-            return send_file(compressed_file, as_attachment=True)
 
-        # Process Word files (.docx)
-        elif filename.lower().endswith('.docx'):
-            document = Document(file_path)
-            text = '\n'.join([para.text for para in document.paragraphs])
-            huffman = HuffmanCoding()
-            compressed_file = huffman.compress_text(text)
-            return send_file(compressed_file, as_attachment=True)
+            try:
+                compressed_file = huffman.compress(file_path)
+                status = f"File compressed successfully. <a href='/download/{compressed_file}'>Download here</a>"
+            except Exception as e:
+                status = f"An error occurred: {str(e)}"
+                print(f"Error during compression: {str(e)}")
+            
+            return render_template("uploading.html", filename=filename, status=status)
 
-        # Process PDF files
-        elif filename.lower().endswith('.pdf'):
-            with open(file_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text()
-            huffman = HuffmanCoding()
-            compressed_file = huffman.compress_text(text)
-            return send_file(compressed_file, as_attachment=True)
+        return "Invalid file type. Please upload a valid file."
 
-        else:
-            return "Unsupported file type! Only images, text, Word, and PDF files are allowed."
-
-    except Exception as e:
-        print(f"Error: {e}")
-        return "An error occurred while processing your file."
+@app.route("/download/<filename>")
+def download_file(filename):
+    return redirect(url_for('static', filename=f'compressed/{filename}'))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
