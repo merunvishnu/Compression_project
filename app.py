@@ -31,13 +31,10 @@ def upload_file():
 
         # Compress the file
         huffman_coding = HuffmanCoding()
-        compressed_file = huffman_coding.compress(file_path)
+        compressed_file = huffman_coding.compress(file_path)  # Compressed file path returned
 
         # Ensure the directory exists for the compressed file
-        os.makedirs("static/compressed/uploads", exist_ok=True)
-
-        # Move the compressed file to the correct directory
-        compressed_file_path = f"static/compressed/uploads/{filename}.huff"
+        compressed_file_path = os.path.join("static/compressed/uploads", f"{filename}.huff")
         os.rename(compressed_file, compressed_file_path)
 
         # Return the compression result
@@ -53,7 +50,7 @@ def upload_file():
 @app.route('/download/<filename>')
 def download_file(filename):
     # Send the compressed file to the user
-    compressed_file_path = f"static/compressed/uploads/{filename}.huff"
+    compressed_file_path = os.path.join("static/compressed/uploads", f"{filename}.huff")
     
     if not os.path.exists(compressed_file_path):
         return "File not found", 404
