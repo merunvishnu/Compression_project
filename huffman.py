@@ -1,6 +1,7 @@
 import heapq
 import os
 
+
 class HuffmanNode:
     def __init__(self, char, freq):
         self.char = char
@@ -11,6 +12,7 @@ class HuffmanNode:
     def __lt__(self, other):
         return self.freq < other.freq
 
+
 class HuffmanCoding:
     def __init__(self):
         self.heap = []
@@ -20,10 +22,7 @@ class HuffmanCoding:
     def calculate_frequencies(self, data):
         frequency = {}
         for byte in data:
-            if byte in frequency:
-                frequency[byte] += 1
-            else:
-                frequency[byte] = 1
+            frequency[byte] = frequency.get(byte, 0) + 1
         return frequency
 
     def build_heap(self, frequency):
@@ -66,22 +65,15 @@ class HuffmanCoding:
         extra_padding = 8 - len(compressed_data) % 8
         compressed_data += '0' * extra_padding
         padded_info = "{0:08b}".format(extra_padding)
-        compressed_data = padded_info + padded_info
+        compressed_data = padded_info + compressed_data
 
         byte_array = bytearray()
         for i in range(0, len(compressed_data), 8):
             byte = compressed_data[i:i + 8]
             byte_array.append(int(byte, 2))
 
-        # Construct the correct path for the compressed file
-        filename = os.path.basename(input_file)  # Extract the filename
-        compressed_file = filename + ".huff"  # Append .huff to the filename
-        output_path = os.path.join("static", "compressed", "uploads", compressed_file)
-        
-        # Ensure the output directory exists
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
-        with open(output_path, 'wb') as file:
+        compressed_file = input_file + ".huff"
+        with open(compressed_file, 'wb') as file:
             file.write(byte_array)
 
-        return output_path  # Return the full path of the compressed file
+        return compressed_file
