@@ -1,48 +1,51 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
-import time
+from flask import Flask, request, render_template, send_file
 from huffman import HuffmanCoding
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
+# Ensure the necessary directories exist
+os.makedirs("static/compressed/uploads", exist_ok=True)
+
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/upload", methods=["POST"])
+@app.route('/upload', methods=['POST'])
 def upload_file():
-    if request.method == "POST":
-        # Check if the file part is present in the request
-        file = request.files.get("file")
-        
-        if not file:
-            return redirect(url_for('index'))  # Redirect to the main page if no file is uploaded
+    if 'file' not in request.files:
+        return "No file part", 400
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+    
+    # Save the uploaded file temporarily
+    filename = file.filename
+    file_path = os.path.join('static/uploads', filename)
+    file.save(file_path)
 
-        filename = file.filename
-        if filename.endswith(('.jpg', '.jpeg', '.png', '.txt', '.docx', '.pdf')):
-            file_path = os.path.join("uploads", filename)
-            file.save(file_path)
+    # Compress the file
+    huffman_coding = HuffmanCoding()
+    try:
+        compressed_file = huffman_coding.compress(file_path)
 
-            # Start compression process
-            status = "Processing"
-            # Use HuffmanCoding to compress the file
-            huffman = HuffmanCoding()
+        # Ensure the directory exists for the compressed file
+        os.makedirs("static/compressed/uploads", exist_ok=True)
 
-            try:
-                compressed_file = huffman.compress(file_path)
-                status = f"File compressed successfully. <a href='/download/{compressed_file}'>Download here</a>"
-            except Exception as e:
-                status = f"An error occurred: {str(e)}"
-                print(f"Error during compression: {str(e)}")
-            
-            return render_template("uploading.html", filename=filename, status=status)
+        # Move the compressed file to the correct directory
+        compressed_file_path = f"static/compressed/uploads/{filename}.huff"
+        os.rename(compressed_file, compressed_file_path)
 
-        return "Invalid file type. Please upload a valid file."
+        # Return the compression result
+        return render_template('uploading.html', filename=filename, status='Compression complete')
+    
+    except Exception as e:
+        return render_template('uploading.html', filename=filename, status=f"An error occurred: {e}")
 
-@app.route("/download/<filename>")
+@app.route('/download/<filename>')
 def download_file(filename):
-    return redirect(url_for('static', filename=f'compressed/{filename}'))
+    # Send the compressed file to the user
+    return send_file(f"static/compressed/uploads/{filename}.huff", as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
-    
+    app.run(debug=True, host='0.0.0.0', port=5000)
