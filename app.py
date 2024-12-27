@@ -33,14 +33,23 @@ def upload_file():
         huffman_coding = HuffmanCoding()
         compressed_file = huffman_coding.compress(file_path)  # Compressed file path returned
 
-        # Ensure the directory exists for the compressed file
+        # Debugging: Log the returned compressed file path
+        print(f"Compressed file path returned by HuffmanCoding.compress: {compressed_file}")
+
+        # Construct the correct compressed file path
         compressed_file_path = os.path.join("static/compressed/uploads", f"{filename}.huff")
+        print(f"Final compressed file path: {compressed_file_path}")
+
+        # Move the compressed file to the correct directory
         os.rename(compressed_file, compressed_file_path)
 
         # Return the compression result
         return render_template('uploading.html', filename=filename, status='Compression complete')
 
     except Exception as e:
+        # Debugging: Log the exception details
+        print(f"Error occurred during compression: {e}")
+        
         # Remove the uploaded file in case of an error
         if os.path.exists(file_path):
             os.remove(file_path)
