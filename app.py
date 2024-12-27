@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, send_file, render_template
+from flask import Flask, request, send_file
 from huffman import HuffmanCoding
 
 app = Flask(__name__)
@@ -10,7 +10,18 @@ os.makedirs("static/compressed/uploads", exist_ok=True)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return '''
+    <!doctype html>
+    <html>
+    <body>
+        <h2>Upload a file for compression</h2>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button type="submit">Upload and Compress</button>
+        </form>
+    </body>
+    </html>
+    '''
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -30,16 +41,13 @@ def upload_file():
     try:
         compressed_file = huffman_coding.compress(file_path)
 
-        # Ensure the directory exists for the compressed file
-        os.makedirs("static/compressed/uploads", exist_ok=True)
-
         # Move the compressed file to the correct directory
         compressed_file_path = os.path.join("static/compressed/uploads", os.path.basename(compressed_file))
         os.rename(compressed_file, compressed_file_path)
 
         # Automatically download the compressed file
         return send_file(compressed_file_path, as_attachment=True)
-    
+
     except Exception as e:
         return f"An error occurred during compression: {e}", 500
 
