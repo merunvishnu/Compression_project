@@ -23,10 +23,10 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return 'No file part!'
+        return 'No file part!', 400
     file = request.files['file']
     if file.filename == '':
-        return 'No selected file!'
+        return 'No selected file!', 400
 
     filename = file.filename
     file_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -66,15 +66,11 @@ def upload_file():
             return send_file(compressed_file, as_attachment=True)
 
         else:
-            return "Unsupported file type! Only images, text, Word, and PDF files are allowed."
+            return "Unsupported file type! Only images, text, Word, and PDF files are allowed.", 400
 
     except Exception as e:
         print(f"Error: {e}")
-        return "An error occurred while processing your file."
+        return "An error occurred while processing your file.", 500
 
-if __name__ == "__main__":
-    app.run(debug=True)
-    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
