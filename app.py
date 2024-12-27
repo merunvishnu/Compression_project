@@ -1,20 +1,11 @@
-from flask import Flask, render_template, request, send_file
-from PIL import Image
 import os
+from flask import Flask, request, render_template, send_file
 from huffman import HuffmanCoding
-from docx import Document
-import PyPDF2
 
 app = Flask(__name__)
 
-# Create directories if they don't exist
-UPLOAD_FOLDER = "uploads"
-COMPRESSED_FOLDER = "compressed"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(COMPRESSED_FOLDER, exist_ok=True)
-
-# Set max upload size to 50MB
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+# Ensure the necessary directories exist
+os.makedirs("static/compressed/uploads", exist_ok=True)
 
 @app.route('/')
 def index():
@@ -23,54 +14,38 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return 'No file part!'
+        return "No file part", 400
     file = request.files['file']
     if file.filename == '':
-        return 'No selected file!'
-
+        return "No selected file", 400
+    
+    # Save the uploaded file temporarily
     filename = file.filename
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    file_path = os.path.join('static/uploads', filename)
     file.save(file_path)
 
+    # Compress the file
+    huffman_coding = HuffmanCoding()
     try:
-        # Process image files
-        if filename.lower().endswith(('jpg', 'jpeg', 'png')):
-            compressed_image_path = os.path.join(COMPRESSED_FOLDER, "compressed_" + filename)
-            image = Image.open(file_path)
-            image.save(compressed_image_path, quality=85, optimize=True)
-            return send_file(compressed_image_path, as_attachment=True)
+        compressed_file = huffman_coding.compress(file_path)
 
-        # Process text files using Huffman Coding
-        elif filename.lower().endswith('.txt'):
-            huffman = HuffmanCoding()
-            compressed_file = huffman.compress(file_path)
-            return send_file(compressed_file, as_attachment=True)
+        # Ensure the directory exists for the compressed file
+        os.makedirs("static/compressed/uploads", exist_ok=True)
 
-        # Process Word files (.docx)
-        elif filename.lower().endswith('.docx'):
-            document = Document(file_path)
-            text = '\n'.join([para.text for para in document.paragraphs])
-            huffman = HuffmanCoding()
-            compressed_file = huffman.compress_text(text)
-            return send_file(compressed_file, as_attachment=True)
+        # Move the compressed file to the correct directory
+        compressed_file_path = f"static/compressed/uploads/{filename}.huff"
+        os.rename(compressed_file, compressed_file_path)
 
-        # Process PDF files
-        elif filename.lower().endswith('.pdf'):
-            with open(file_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text()
-            huffman = HuffmanCoding()
-            compressed_file = huffman.compress_text(text)
-            return send_file(compressed_file, as_attachment=True)
-
-        else:
-            return "Unsupported file type! Only images, text, Word, and PDF files are allowed."
-
+        # Return the compression result
+        return render_template('uploading.html', filename=filename, status='Compression complete')
+    
     except Exception as e:
-        print(f"Error: {e}")
-        return "An error occurred while processing your file."
+        return render_template('uploading.html', filename=filename, status=f"An error occurred: {e}")
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    # Send the compressed file to the user
+    return send_file(f"static/compressed/uploads/{filename}.huff", as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
