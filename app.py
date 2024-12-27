@@ -4,7 +4,7 @@ from huffman import HuffmanCoding
 
 app = Flask(__name__)
 
-# Ensure the necessary directories exist
+# Ensure directories exist
 os.makedirs("static/uploads", exist_ok=True)
 os.makedirs("static/compressed/uploads", exist_ok=True)
 
@@ -31,21 +31,16 @@ def upload_file():
     if file.filename == '':
         return "No selected file", 400
 
-    # Save the uploaded file temporarily
     filename = file.filename
     file_path = os.path.join('static/uploads', filename)
     file.save(file_path)
 
-    # Compress the file
     huffman_coding = HuffmanCoding()
     try:
         compressed_file = huffman_coding.compress(file_path)
-
-        # Move the compressed file to the correct directory
         compressed_file_path = os.path.join("static/compressed/uploads", os.path.basename(compressed_file))
         os.rename(compressed_file, compressed_file_path)
 
-        # Automatically download the compressed file
         return send_file(compressed_file_path, as_attachment=True)
 
     except Exception as e:
