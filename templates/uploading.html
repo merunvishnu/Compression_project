@@ -4,55 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Uploading</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 80%;
-            max-width: 500px;
-        }
-        h1 {
-            font-size: 24px;
-            color: #333;
-        }
-        p {
-            font-size: 18px;
-            color: #555;
-        }
-        .status {
-            font-weight: bold;
-            color: #ff9800; /* Orange color to highlight the status */
-        }
-        a {
-            font-size: 16px;
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Your file "{{ filename }}" is being processed.</h1>
-        <p class="status">Status: {{ status if status else 'Processing... Please wait.' }}</p>
-        <p>Please wait, the file is being compressed and saved to the system.</p>
-        <p><a href="/">Go back to upload another file</a></p>
-    </div>
+    <h1>Your file "{{ filename }}" is being processed.</h1>
+    <p>Status: {{ status if status else 'Processing... Please wait.' }}</p>
+    <p>Please wait, the file is being compressed and saved to the system.</p>
+    <p><a href="/">Go back to upload another file</a></p>
 </body>
 </html>
