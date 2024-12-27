@@ -20,7 +20,10 @@ class HuffmanCoding:
     def calculate_frequencies(self, data):
         frequency = {}
         for byte in data:
-            frequency[byte] = frequency.get(byte, 0) + 1
+            if byte in frequency:
+                frequency[byte] += 1
+            else:
+                frequency[byte] = 1
         return frequency
 
     def build_heap(self, frequency):
@@ -71,30 +74,8 @@ class HuffmanCoding:
             byte_array.append(int(byte, 2))
 
         compressed_file = input_file + ".huff"
-        with open(compressed_file, 'wb') as file:
-            file.write(byte_array)
-
-        return compressed_file
-
-    def compress_text(self, text):
-        # Compresses text directly (for .docx and .pdf text)
-        frequency = self.calculate_frequencies(text.encode('utf-8'))  # Use UTF-8 for better encoding support
-        self.build_heap(frequency)
-        self.make_codes()
-
-        compressed_data = ''.join([self.codes[byte] for byte in text.encode('utf-8')])
-        extra_padding = 8 - len(compressed_data) % 8
-        compressed_data += '0' * extra_padding
-        padded_info = "{0:08b}".format(extra_padding)
-        compressed_data = padded_info + compressed_data
-
-        byte_array = bytearray()
-        for i in range(0, len(compressed_data), 8):
-            byte = compressed_data[i:i + 8]
-            byte_array.append(int(byte, 2))
-
-        compressed_file = "compressed_text.huff"
-        with open(compressed_file, 'wb') as file:
+        output_path = os.path.join("static", "compressed", compressed_file)
+        with open(output_path, 'wb') as file:
             file.write(byte_array)
 
         return compressed_file
